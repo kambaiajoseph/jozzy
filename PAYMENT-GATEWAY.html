@@ -1,0 +1,90 @@
+<link rel="stylesheet" href="style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="PAYMENT-GATEWAY.html">
+</head>
+<body>
+ 
+    <h1>you can use your credit card to do the payment..</h1>
+    <form id="paymentForm">
+        <label for="cardElement">
+            Credit or debit card
+        </label>
+        <div id="cardElement">
+            <!-- A Stripe Element will be inserted here. -->
+        </div>
+
+        <!-- Used to display form errors. -->
+        <div id="cardErrors" role="alert"></div>
+
+        <button type="button" onclick="submitPayment()">Submit Payment</button>
+    </form>
+
+    <script>
+        var stripe = Stripe('YOUR_PUBLIC_STRIPE_KEY'); // Replace with your actual Stripe public key
+        var elements = stripe.elements();
+
+        // Create an instance of the card Element.
+        var card = elements.create('card');
+
+        // Add an instance of the card Element into the `cardElement` div.
+        card.mount('#cardElement');
+
+        // Handle real-time validation errors from the card Element.
+        card.addEventListener('change', function (event) {
+            var displayError = document.getElementById('cardErrors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        // Handle form submission.
+        function submitPayment() {
+            stripe.createToken(card).then(function (result) {
+                if (result.error) {
+                    // Inform the user if there was an error.
+                    var errorElement = document.getElementById('cardErrors');
+                    errorElement.textContent = result.error.message;
+                } else {
+                    // Send the token to your server to process the payment.
+                    console.log(result.token);
+
+                    // Call a function to send the token to your server
+                    handleServerPayment(result.token);
+                }
+            });
+        }
+
+        function handleServerPayment(token) {
+            // Replace 'YOUR_SERVER_ENDPOINT' with your server endpoint for processing payments
+            var serverEndpoint = 'YOUR_SERVER_ENDPOINT';
+
+            // Make an AJAX request to your server to handle the payment processing
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', serverEndpoint);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Payment successful, handle accordingly
+                    console.log('Payment successful:', xhr.responseText);
+                } else {
+                    // Payment failed, handle accordingly
+                    console.error('Payment failed:', xhr.responseText);
+                }
+            };
+            xhr.send(JSON.stringify({token: token.id}));
+        }
+    </script>
+
+    <footer>
+        <p>Thank you for your payment.</p>
+    </footer>
+</body>
+</html>
